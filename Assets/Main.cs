@@ -62,12 +62,14 @@ public class Main : MonoBehaviour {
         txtEXP.text = role.EXP + "/" + role.EXPMax;
         sliderEXP.value = role.EXP * 1f / role.EXPMax;
 
+        Vector2 rPos = objAttrValue.GetComponent<RectTransform>().anchoredPosition;
         for (int i=0; i<8; i++)
         {
-            GameObject obj = GameObject.Instantiate(objAttrValue);
-            obj.transform.parent = objAttrValue.transform.parent;
+            GameObject obj = GameObject.Instantiate(objAttrValue, objAttrValue.transform.parent);
+            //obj.transform.parent = objAttrValue.transform.parent;
             obj.SetActive(true);
-            obj.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, 80-i*20);
+            obj.GetComponent<RectTransform>().anchoredPosition = rPos;
+            rPos.y -= 60f;
         }
 	}
 
