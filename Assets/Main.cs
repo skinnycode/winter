@@ -4,7 +4,10 @@ using UnityEngine;
 using UnityEngine.UI;
 
 public class Main : MonoBehaviour {
+    List<string> lMonsterName = new List<string>();
+
     Player role = new Player();
+    Monster target = null;
     Text txtName = null;
     Text txtLevel = null;
     Slider sliderHP = null;
@@ -18,6 +21,13 @@ public class Main : MonoBehaviour {
     GameObject EnemyPanel = null;
     GameObject objEnemy = null;
 
+    Text txtTargetName = null;
+    Text txtTargetLevel = null;
+    Slider sliderTargetHP = null;
+    Text txtTargetHP = null;
+
+    System.Random rand = new System.Random();
+
     T GetText<T>(string strName)
     {
         GameObject obj = GameObject.Find(strName);
@@ -30,20 +40,37 @@ public class Main : MonoBehaviour {
          
 	// Use this for initialization
 	void Start () {
+        lMonsterName.Add("小地精");
+        lMonsterName.Add("大地精");
+        lMonsterName.Add("地精祭祀");
+        lMonsterName.Add("鬓刺猪");
+        lMonsterName.Add("剑齿虎");
+        lMonsterName.Add("猛犸象");
+        lMonsterName.Add("火精灵");
+        lMonsterName.Add("熔岩蜥蜴");
+        lMonsterName.Add("飞羽");
+        lMonsterName.Add("黑石兽人");
+        lMonsterName.Add("魅魔");
+
         role.Init("李铁柱", 1);
 
-	    txtName = GetText<Text>("Name"); 
-        txtLevel = GetText<Text>("Level");
-        txtHP = GetText<Text>("Canvas/Hp/HpNum"); 
-        txtMP = GetText<Text>("Mp/MpNum"); 
+	    txtName = GetText<Text>("Role/Name");
+        txtLevel = GetText<Text>("Role/Level");
+        txtHP = GetText<Text>("Role/Hp/HpNum");
+        txtMP = GetText<Text>("Role/Mp/MpNum"); 
         txtEXP = GetText<Text>("Exp/ExpNum");
-        sliderHP = GetText<Slider>("Canvas/Hp"); 
-        sliderMP = GetText<Slider>("Mp"); 
+        sliderHP = GetText<Slider>("Role/Hp");
+        sliderMP = GetText<Slider>("Role/Mp"); 
         sliderEXP = GetText<Slider>("Exp"); 
         AttrPanel = GameObject.Find("Attr");
         EnemyPanel = GameObject.Find("Enemy");
         objAttrValue = GameObject.Find("Attr/Attr");
         objEnemy = GameObject.Find("Enemy/Enemy");
+
+        txtTargetName = GetText<Text>("Target/Name");
+        txtTargetLevel = GetText<Text>("Target/Level");
+        txtTargetHP = GetText<Text>("Target/Hp/HpNum");
+        sliderTargetHP = GetText<Slider>("Target/Hp");
 
         if (objAttrValue != null)
         {
@@ -81,8 +108,20 @@ public class Main : MonoBehaviour {
         {
             return;
         }
-        fLastUpdateTime = Time.time; 
-        role.EXP += 10;
+        fLastUpdateTime = Time.time + 0.1f;
+        if (target == null || target.HP <= 0)
+        {
+            target = new Monster();
+            target.Init(lMonsterName[rand.Next()%lMonsterName.Count], role.Level + (rand.Next()%3-1));
+        }
+
+        role.Attack(target);
+
+        if (target.HP <= 0)
+        {
+            role.EXP += target.AddEXP;
+        }
+
         if (role.EXP > role.EXPMax)
         {
             int nLevelExp = role.EXP - role.EXPMax;
@@ -101,7 +140,13 @@ public class Main : MonoBehaviour {
         sliderMP.value = role.MP * 1f / role.MPMax;
 
         txtEXP.text = role.EXP + "/" + role.EXPMax;
-        sliderEXP.value = role.EXP * 1f / role.EXPMax;	
+        sliderEXP.value = role.EXP * 1f / role.EXPMax;
+
+        txtTargetName.text = target.strName;
+        txtTargetLevel.text = "LV." + target.Level;
+
+        txtTargetHP.text = target.HP + "/" + target.HPMax;
+        sliderTargetHP.value = target.HP * 1f / target.HPMax;
 	}
 }
 
@@ -116,12 +161,40 @@ class Player
     public int EXP = 0;
     public int EXPMax = 0;
 
+    public float fAttackSpeed = 1.5f;
+    public float fCritRate = 0.2f;
+    public float fCritDamageRate = 2f;
+    public float fAttackTime = 0;
+
+    System.Random rand = new System.Random();
+
     public void Init(string name, int nLevel)
     {
         strName = name;
         Level = nLevel;
 
         RefreshAttr();
+    }
+
+    public void Attack(Monster target)
+    {
+        if (Time.time < fAttackTime)
+        {
+            return;
+        }
+        fAttackTime = Time.time + fAttackSpeed;
+
+        int Damage = (int)Mathf.Pow(Level+5, 2);
+
+        if (rand.NextDouble() <= fCritRate)
+        {
+            Damage = (int)(Damage *fCritDamageRate);
+        }
+        target.HP -= Damage;
+        if (target.HP < 0)
+        {
+            target.HP = 0;
+        }
     }
 
     public void RefreshAttr()
@@ -132,5 +205,29 @@ class Player
         MP = MPMax;
         EXPMax = (Level * Level) * 50 + 100;
         EXP = 0;
+    }
+}
+
+class Monster
+{
+    public string strName = "";
+    public int Level = 0;
+    public int HP = 0;
+    public int HPMax = 0;
+    public int AddEXP = 0;
+
+    public void Init(string name, int nLevel)
+    {
+        strName = name;
+        Level = nLevel;
+
+        RefreshAttr();
+    }
+
+    public void RefreshAttr()
+    {
+        HPMax = (Level * Level) * 30 + 30;
+        HP = HPMax;
+        AddEXP = (int)Mathf.Sqrt((Level * Level) * 50 + 500);
     }
 }
